@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leilão & Vendas</title>
+<style>
+  :root {
+    --bg: #0f0f0f; --surface: #1a1a1a; --card: #222; --border: #2e2e2e;
+    --gold: #c9a84c; --gold-dim: #8a6e2f; --gold-bg: rgba(201,168,76,0.08);
+    --text: #f0ece2; --muted: #888; --green: #4caf6e; --yellow: #e6a817; --red: #e05252;
+    --blue: #4a9eff; --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; position: sticky; top: 0; z-index: 100; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { font-size: 22px; }
+  .logo-text { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+  .logo-text span { color: var(--gold); }
+  .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 57px; z-index: 99; overflow-x: auto; }
+  .tab { flex: 1; padding: 11px 6px; text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; min-width: 70px; }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+  .section-title { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin: 20px 0 12px; }
+  .section-title:first-child { margin-top: 0; }
+  .field { margin-bottom: 14px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.3px; }
+  input[type=text], input[type=number], input[type=date], textarea, select { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font); font-size: 15px; padding: 12px 14px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+  textarea { resize: none; min-height: 80px; }
+  select option { background: var(--card); }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .pill-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 13px; cursor: pointer; transition: all 0.15s; background: var(--card); color: var(--muted); user-select: none; }
+  .pill.selected { border-color: var(--gold); color: var(--gold); background: var(--gold-bg); }
+  .photo-upload { border: 2px dashed var(--border); border-radius: 10px; padding: 16px; text-align: center; cursor: pointer; background: var(--card); }
+  .photo-upload .upload-icon { font-size: 28px; margin-bottom: 6px; }
+  .photo-upload p { font-size: 12px; color: var(--muted); }
+  .photo-upload input { display: none; }
+  .photo-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .photo-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+  .photo-remove { position: relative; display: inline-block; }
+  .photo-remove .remove-btn { position: absolute; top: -6px; right: -6px; background: var(--red); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; }
+  .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-family: var(--font); font-size: 15px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; transition: opacity 0.2s; }
+  .btn:active { opacity: 0.8; }
+  .btn-gold { background: var(--gold); color: #0f0f0f; }
+  .btn-outline { background: transparent; border: 1px solid var(--gold); color: var(--gold); }
+  .btn-red { background: var(--red); color: white; }
+  .btn-green { background: var(--green); color: #0f0f0f; }
+  .btn-sm { padding: 8px 12px; font-size: 12px; width: auto; border-radius: 6px; }
+  .mt { margin-top: 10px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--green); color: white; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 9999; transition: transform 0.3s; white-space: nowrap; max-width: 90vw; text-align: center; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+  .filter-btn { padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--card); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+  .filter-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-bg); }
+  .product-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+  .card-photos { display: flex; gap: 2px; overflow-x: auto; }
+  .card-photo { height: 130px; min-width: 130px; object-fit: cover; flex-shrink: 0; }
+  .card-no-photo { height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; background: var(--surface); color: var(--border); }
+  .card-body { padding: 12px; }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .card-name { font-size: 15px; font-weight: 700; line-height: 1.3; }
+  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0; }
+  .status-Disponível { background: rgba(76,175,110,0.15); color: var(--green); }
+  .status-Reservado { background: rgba(230,168,23,0.15); color: var(--yellow); }
+  .status-Vendido { background: rgba(224,82,82,0.15); color: var(--red); }
+  .card-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .meta-tag { font-size: 11px; color: var(--muted); background: var(--surface); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); }
+  .card-price { font-size: 18px; font-weight: 700; color: var(--gold); margin-bottom: 10px; }
+  .card-price small { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty-icon { font-size: 44px; margin-bottom: 12px; }
+  .empty p { font-size: 14px; line-height: 1.6; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; overflow-y: auto; padding: 16px; }
+  .modal-overlay.show { display: flex; align-items: flex-start; justify-content: center; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 500px; margin: auto; padding: 20px; }
+  .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: var(--gold); display: flex; align-items: center; gap: 8px; }
+  .anuncio-text { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.7; white-space: pre-wrap; color: var(--text); font-family: monospace; margin-bottom: 16px; max-height: 280px; overflow-y: auto; }
+  .counter-bar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .counter { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; text-align: center; }
+  .counter-num { font-size: 20px; font-weight: 700; }
+  .counter-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .c-green { color: var(--green); } .c-yellow { color: var(--yellow); } .c-red { color: var(--red); } .c-gold { color: var(--gold); } .c-blue { color: var(--blue); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+  /* FINANCEIRO */
+  .fin-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+  .fin-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .fin-produto { font-size: 14px; font-weight: 700; }
+  .fin-valor { font-size: 16px; font-weight: 700; color: var(--gold); }
+  .fin-meta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .fin-pagto { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .pagto-Dinheiro { background: rgba(76,175,110,0.15); color: var(--green); }
+  .pagto-PIX { background: rgba(74,158,255,0.15); color: var(--blue); }
+  .pagto-PIX-terceiro { background: rgba(74,158,255,0.1); color: #7ab8ff; }
+  .pagto-Crédito { background: rgba(201,168,76,0.15); color: var(--gold); }
+  .pagto-Débito { background: rgba(201,168,76,0.1); color: #d4b86a; }
+  .pagto-Fiado { background: rgba(224,82,82,0.15); color: var(--red); }
+  .fiado-info { background: var(--surface); border-radius: 8px; padding: 10px; margin-top: 8px; }
+  .fiado-saldo { font-size: 13px; margin-bottom: 6px; }
+  .fiado-abatimento { display: flex; gap: 8px; margin-top: 8px; }
+  .fiado-abatimento input { flex: 1; padding: 8px 10px; font-size: 13px; }
+  .abat-btn { padding: 8px 12px; font-size: 12px; width: auto; border-radius: 6px; white-space: nowrap; }
+  .resumo-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .resumo-title { font-size: 12px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .resumo-valor { font-size: 24px; font-weight: 700; }
+  .pagto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .pagto-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .pagto-item-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .pagto-item-valor { font-size: 16px; font-weight: 700; }
+  .cadastrado-by { font-size: 11px; color: var(--muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <span class="logo-icon">🔨</span>
+    <div class="logo-text">Leilão <span>&amp; Vendas</span></div>
+  </div>
+</header>
+<div class="tabs">
+  <div class="tab active" onclick="showTab('cadastro',this)">＋ Cadastrar</div>
+  <div class="tab" onclick="showTab('estoque',this)">📦 Estoque</div>
+  <div class="tab" onclick="showTab('financeiro',this)">💰 Financeiro</div>
+  <div class="tab" onclick="showTab('fiados',this)">⏳ Fiados</div>
+</div>
+
+<!-- ═══ ABA CADASTRO ═══ -->
+<div id="tab-cadastro" class="page active">
+  <div class="section-title">📸 Fotos do Produto</div>
+  <div class="field">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="photo-upload" onclick="document.getElementById('foto-camera').click()" style="padding:14px;">
+        <div class="upload-icon">📷</div><p>Câmera</p>
+        <input type="file" id="foto-camera" accept="image/*" capture="environment" multiple onchange="addPhotos(this)">
+      </div>
+      <div class="photo-upload" onclick="document.getElementById('foto-galeria').click()" style="padding:14px;">
+        <div class="upload-icon">🖼️</div><p>Galeria</p>
+        <input type="file" id="foto-galeria" accept="image/*" multiple onchange="addPhotos(this)">
+      </div>
+    </div>
+    <div class="photo-preview" id="photo-preview"></div>
+  </div>
+
+  <div class="section-title">📋 Dados do Produto</div>
+  <div class="field"><label>Nome do produto *</label><input type="text" id="f-nome" placeholder="Ex: Sofá 3 lugares retrátil"></div>
+  <div class="field"><label>Descrição / Dados técnicos</label><textarea id="f-desc" placeholder="Marca, modelo, cor, material, voltagem..."></textarea></div>
+
+  <div class="section-title">🏷️ Categoria</div>
+  <div class="field">
+    <div class="pill-group" id="categoria-pills">
+      <div class="pill" onclick="selectPill(this,'categoria')">❄️ Eletrodomésticos</div>
+      <div class="pill" onclick="selectPill(this,'categoria')">🌬️ Climatização</div>
+      <div class="pill" onclick="selectPill(this,'categoria')">🪑 Móveis de Escritório</div>
+      <div class="pill" onclick="selectPill(this,'categoria')">🏠 Móveis e Casa</div>
+      <div class="pill" onclick="selectPill(this,'categoria')">🔧 Ferramentas</div>
+      <div class="pill" onclick="selectPill(this,'categoria')">💻 Eletrônicos</div>
+      <div class="pill" onclick="selectPill(this,'categoria')">📦 Outros</div>
+    </div>
+  </div>
+
+  <div class="section-title">📐 Medidas</div>
+  <div class="row-3">
+    <div class="field"><label>Largura (cm)</label><input type="number" id="f-largura" placeholder="120"></div>
+    <div class="field"><label>Altura (cm)</label><input type="number" id="f-altura" placeholder="80"></div>
+    <div class="field"><label>Prof. (cm)</label><input type="number" id="f-prof" placeholder="60"></div>
+  </div>
+
+  <div class="section-title">⭐ Estado de Conservação</div>
+  <div class="field">
+    <div class="pill-group" id="conservacao-pills">
+      <div class="pill" onclick="selectPill(this,'conservacao')">✅ Produto novo</div>
+      <div class="pill" onclick="selectPill(this,'conservacao')">👍 Ótimo estado de conservação</div>
+      <div class="pill" onclick="selectPill(this,'conservacao')">🆗 Razoável estado de conservação</div>
+      <div class="pill" onclick="selectPill(this,'conservacao')">⚠️ Produto com avarias</div>
+    </div>
+  </div>
+
+  <div class="section-title">📦 Origem</div>
+  <div class="field">
+    <div class="pill-group" id="origem-pills">
+      <div class="pill" onclick="selectPill(this,'origem')">🔨 Leilão</div>
+      <div class="pill" onclick="selectPill(this,'origem')">🤝 Compra direta</div>
+      <div class="pill" onclick="selectPill(this,'origem')">📦 Outro</div>
+    </div>
+  </div>
+
+  <div class="section-title">💰 Preços e Quantidade</div>
+  <div class="row-2">
+    <div class="field"><label>Custo (R$)</label><input type="number" id="f-custo" placeholder="0"></div>
+    <div class="field"><label>Venda (R$) *</label><input type="number" id="f-venda" placeholder="0"></div>
+  </div>
+  <div class="field"><label>Quantidade *</label><input type="number" id="f-qtd" placeholder="1" min="1" value="1"></div>
+
+  <div class="section-title">👤 Cadastrado por</div>
+  <div class="field">
+    <div class="pill-group" id="quem-pills">
+      <div class="pill" onclick="selectPill(this,'quem')">👨 Dono</div>
+      <div class="pill" onclick="selectPill(this,'quem')">👩 Esposa</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <button class="btn btn-gold" onclick="salvarProduto()">✅ Salvar Produto</button>
+  <button class="btn btn-outline mt" onclick="limparForm()">🗑 Limpar</button>
+</div>
+
+<!-- ═══ ABA ESTOQUE ═══ -->
+<div id="tab-estoque" class="page">
+  <div class="counter-bar" id="counters"></div>
+  <div class="filter-bar">
+    <div class="filter-btn active" onclick="filtrar('Todos',this)">Todos</div>
+    <div class="filter-btn" onclick="filtrar('Disponível',this)">✅ Disponível</div>
+    <div class="filter-btn" onclick="filtrar('Reservado',this)">⏳ Reservado</div>
+    <div class="filter-btn" onclick="filtrar('Vendido',this)">🏷 Vendido</div>
+  </div>
+  <div class="filter-bar" id="cat-filter-bar">
+    <div class="filter-btn active" onclick="filtrarCat('Todas',this)">Todas</div>
+    <div class="filter-btn" onclick="filtrarCat('Eletrodomésticos',this)">❄️</div>
+    <div class="filter-btn" onclick="filtrarCat('Climatização',this)">🌬️</div>
+    <div class="filter-btn" onclick="filtrarCat('Móveis de Escritório',this)">🪑</div>
+    <div class="filter-btn" onclick="filtrarCat('Móveis e Casa',this)">🏠</div>
+    <div class="filter-btn" onclick="filtrarCat('Ferramentas',this)">🔧</div>
+    <div class="filter-btn" onclick="filtrarCat('Eletrônicos',this)">💻</div>
+    <div class="filter-btn" onclick="filtrarCat('Outros',this)">📦</div>
+  </div>
+  <div id="lista-produtos"></div>
+</div>
+
+<!-- ═══ ABA FINANCEIRO ═══ -->
+<div id="tab-financeiro" class="page">
+  <div class="section-title">📅 Filtrar por período</div>
+  <div class="row-2" style="margin-bottom:10px;">
+    <div class="field"><label>De</label><input type="date" id="fin-de"></div>
+    <div class="field"><label>Até</label><input type="date" id="fin-ate"></div>
+  </div>
+  <div class="filter-bar" id="fin-pagto-filter">
+    <div class="filter-btn active" onclick="filtrarFinPagto('Todos',this)">Todos</div>
+    <div class="filter-btn" onclick="filtrarFinPagto('Dinheiro',this)">💵 Dinheiro</div>
+    <div class="filter-btn" onclick="filtrarFinPagto('PIX',this)">⚡ PIX</div>
+    <div class="filter-btn" onclick="filtrarFinPagto('PIX-terceiro',this)">🔄 PIX 3°</div>
+    <div class="filter-btn" onclick="filtrarFinPagto('Crédito',this)">💳 Crédito</div>
+    <div class="filter-btn" onclick="filtrarFinPagto('Débito',this)">💳 Débito</div>
+    <div class="filter-btn" onclick="filtrarFinPagto('Fiado',this)">📋 Fiado</div>
+  </div>
+  <button class="btn btn-outline" style="margin-bottom:16px;padding:10px;" onclick="renderFinanceiro()">🔍 Filtrar</button>
+  <div id="fin-resumo"></div>
+  <div id="fin-lista"></div>
+</div>
+
+<!-- ═══ ABA FIADOS ═══ -->
+<div id="tab-fiados" class="page">
+  <div id="fiados-lista"></div>
+</div>
+
+<!-- MODAL VENDA -->
+<div class="modal-overlay" id="modal-venda">
+  <div class="modal">
+    <div class="modal-title">💰 Registrar Venda</div>
+    <div id="venda-produto-nome" style="font-size:15px;font-weight:700;margin-bottom:4px;"></div>
+    <div id="venda-produto-preco" style="font-size:13px;color:var(--muted);margin-bottom:16px;"></div>
+
+    <div class="field"><label>Valor da venda (R$) *</label><input type="number" id="v-valor" placeholder="0"></div>
+    <div class="field"><label>Nome do comprador</label><input type="text" id="v-comprador" placeholder="Ex: João Silva"></div>
+    <div class="field"><label>Telefone / WhatsApp</label><input type="text" id="v-telefone" placeholder="(37) 9 9999-9999"></div>
+    <div class="field"><label>Forma de pagamento *</label>
+      <div id="pagto-lista" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <button class="btn btn-outline mt" style="padding:9px;font-size:13px;" onclick="adicionarPagto()">＋ Adicionar forma de pagamento</button>
+    </div>
+    <div id="fiado-extra" style="display:none;">
+      <div class="field"><label>Valor de entrada (R$)</label><input type="number" id="v-entrada" placeholder="0 = sem entrada"></div>
+      <div class="field"><label>Observação / combinado</label><textarea id="v-obs-fiado" placeholder="Ex: paga R$100 semana que vem..." style="min-height:60px;"></textarea></div>
+    </div>
+    <div class="field"><label>Data da venda</label><input type="date" id="v-data"></div>
+    <div class="field"><label>Observação</label><textarea id="v-obs" placeholder="Observação opcional..." style="min-height:50px;"></textarea></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
+      <button class="btn btn-green" onclick="confirmarVenda()">✅ Confirmar</button>
+      <button class="btn btn-outline" onclick="fecharModalVenda()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ANÚNCIO -->
+<div class="modal-overlay" id="modal-anuncio">
+  <div class="modal">
+    <div class="modal-title">📢 Anúncio Gerado</div>
+    <div class="anuncio-text" id="anuncio-texto"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <button class="btn btn-gold" onclick="abrirWhatsApp()" style="background:#25D366;font-size:13px;">💬 WhatsApp</button>
+      <button class="btn btn-gold" onclick="abrirMarketplace()" style="background:#1877F2;font-size:13px;">🛒 Marketplace</button>
+    </div>
+    <div style="margin-bottom:10px;"><button class="btn btn-outline" onclick="verFotos()" style="font-size:13px;">📸 Ver fotos para salvar</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button class="btn btn-outline" onclick="copiarAnuncio()" style="font-size:13px;">📋 Copiar texto</button>
+      <button class="btn btn-outline" onclick="fecharModal()" style="font-size:13px;">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FOTOS -->
+<div class="modal-overlay" id="modal-fotos">
+  <div class="modal">
+    <div class="modal-title">📸 Fotos do Produto</div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:12px;">Segure cada foto para salvar na galeria.</p>
+    <div id="fotos-grid" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <div style="margin-top:16px;"><button class="btn btn-outline" onclick="fecharModalFotos()">Fechar</button></div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal-overlay" id="modal-editar">
+  <div class="modal" style="max-height:90vh;overflow-y:auto;">
+    <div class="modal-title">✏️ Editar Produto</div>
+    <div class="field"><label>Nome *</label><input type="text" id="e-nome" placeholder="Nome do produto"></div>
+    <div class="field"><label>Descrição</label><textarea id="e-desc" placeholder="Detalhes..."></textarea></div>
+    <div class="row-3">
+      <div class="field"><label>Largura (cm)</label><input type="number" id="e-largura"></div>
+      <div class="field"><label>Altura (cm)</label><input type="number" id="e-altura"></div>
+      <div class="field"><label>Prof. (cm)</label><input type="number" id="e-prof"></div>
+    </div>
+    <div class="field"><label>Estado</label>
+      <select id="e-conservacao">
+        <option>✅ Produto novo</option>
+        <option>👍 Ótimo estado de conservação</option>
+        <option>🆗 Razoável estado de conservação</option>
+        <option>⚠️ Produto com avarias</option>
+      </select>
+    </div>
+    <div class="field"><label>Origem</label>
+      <select id="e-origem">
+        <option>🔨 Leilão</option><option>🤝 Compra direta</option><option>📦 Outro</option>
+      </select>
+    </div>
+    <div class="field"><label>Categoria</label>
+      <select id="e-categoria">
+        <option>❄️ Eletrodomésticos</option><option>🌬️ Climatização</option>
+        <option>🪑 Móveis de Escritório</option><option>🏠 Móveis e Casa</option>
+        <option>🔧 Ferramentas</option><option>💻 Eletrônicos</option><option>📦 Outros</option>
+      </select>
+    </div>
+    <div class="row-3">
+      <div class="field"><label>Custo (R$)</label><input type="number" id="e-custo"></div>
+      <div class="field"><label>Venda (R$)</label><input type="number" id="e-venda"></div>
+      <div class="field"><label>Qtd.</label><input type="number" id="e-qtd" min="0"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+      <button class="btn btn-gold" onclick="salvarEdicao()">✅ Salvar</button>
+      <button class="btn btn-outline" onclick="fecharModalEditar()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DELETE -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal">
+    <div class="modal-title">⚠️ Excluir produto?</div>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:8px;">O produto será removido do estoque.</p>
+    <p style="color:var(--green);font-size:13px;margin-bottom:20px;">✅ O histórico financeiro será mantido.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button class="btn btn-red" onclick="confirmarDelete()">Excluir</button>
+      <button class="btn btn-outline" onclick="fecharModalDelete()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══ STATE ═══════════════════════════════════════════
+let produtos = [];
+let vendas = [];
+let fotos = [];
+let selectedPills = { conservacao:'', origem:'', quem:'', categoria:'' };
+let filtroAtual = 'Todos';
+let filtroCat = 'Todas';
+let filtroFinPagto = 'Todos';
+let deleteId = null;
+let editId = null;
+let vendaId = null;
+let anuncioProdutoId = null;
+
+// ═══ STORAGE ═════════════════════════════════════════
+function loadData() {
+  Promise.all([
+    window.storage.get('leilao-estoque-v1').catch(()=>null),
+    window.storage.get('leilao-vendas-v1').catch(()=>null)
+  ]).then(([r1, r2]) => {
+    try { if (r1) produtos = JSON.parse(r1.value); } catch(e) { produtos = []; }
+    try { if (r2) vendas = JSON.parse(r2.value); } catch(e) { vendas = []; }
+    renderEstoque();
+  });
+}
+function saveData() {
+  window.storage.set('leilao-estoque-v1', JSON.stringify(produtos)).catch(()=>showToast('Erro ao salvar!'));
+  window.storage.set('leilao-vendas-v1', JSON.stringify(vendas)).catch(()=>{});
+}
+
+// ═══ TABS ════════════════════════════════════════════
+function showTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  (el || event.target).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  if (tab === 'estoque') renderEstoque();
+  if (tab === 'financeiro') renderFinanceiro();
+  if (tab === 'fiados') renderFiados();
+}
+
+// ═══ PILLS ═══════════════════════════════════════════
+function selectPill(el, group) {
+  document.querySelectorAll(`#${group}-pills .pill`).forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedPills[group] = el.textContent.trim();
+}
+
+// ═══ FOTOS ═══════════════════════════════════════════
+function addPhotos(input) {
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => { fotos.push(e.target.result); renderPhotos(); };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+function renderPhotos() {
+  document.getElementById('photo-preview').innerHTML = fotos.map((f,i) => `
+    <div class="photo-remove"><img class="photo-thumb" src="${f}">
+    <button class="remove-btn" onclick="removePhoto(${i})">✕</button></div>`).join('');
+}
+function removePhoto(i) { fotos.splice(i,1); renderPhotos(); }
+
+// ═══ SALVAR PRODUTO ══════════════════════════════════
+function salvarProduto() {
+  const nome = document.getElementById('f-nome').value.trim();
+  const venda = document.getElementById('f-venda').value.trim();
+  if (!nome) { showToast('⚠️ Informe o nome'); return; }
+  if (!venda) { showToast('⚠️ Informe o preço de venda'); return; }
+  if (!selectedPills.conservacao) { showToast('⚠️ Selecione o estado'); return; }
+  if (!selectedPills.origem) { showToast('⚠️ Selecione a origem'); return; }
+  if (!selectedPills.quem) { showToast('⚠️ Selecione quem cadastrou'); return; }
+  const qtd = parseInt(document.getElementById('f-qtd').value) || 1;
+  const produto = {
+    id: Date.now(), nome,
+    desc: document.getElementById('f-desc').value.trim(),
+    largura: document.getElementById('f-largura').value,
+    altura: document.getElementById('f-altura').value,
+    prof: document.getElementById('f-prof').value,
+    conservacao: selectedPills.conservacao,
+    origem: selectedPills.origem,
+    custo: document.getElementById('f-custo').value,
+    venda, qtd, qtdInicial: qtd,
+    quem: selectedPills.quem,
+    categoria: selectedPills.categoria,
+    fotos: [...fotos],
+    status: 'Disponível',
+    data: new Date().toLocaleDateString('pt-BR')
+  };
+  produtos.unshift(produto);
+  saveData();
+  limparForm();
+  showToast('✅ Produto cadastrado!');
+  setTimeout(() => { document.querySelectorAll('.tab')[1].click(); }, 1000);
+}
+
+function limparForm() {
+  ['f-nome','f-desc','f-largura','f-altura','f-prof','f-custo','f-venda'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-qtd').value = '1';
+  fotos = []; renderPhotos();
+  selectedPills = { conservacao:'', origem:'', quem:'', categoria:'' };
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+}
+
+// ═══ RENDER ESTOQUE ══════════════════════════════════
+function renderEstoque() {
+  const disp = produtos.filter(p => p.status==='Disponível').length;
+  const res = produtos.filter(p => p.status==='Reservado').length;
+  const vend = produtos.filter(p => p.status==='Vendido').length;
+  document.getElementById('counters').innerHTML = `
+    <div class="counter"><div class="counter-num c-gold">${produtos.length}</div><div class="counter-label">Total</div></div>
+    <div class="counter"><div class="counter-num c-green">${disp}</div><div class="counter-label">Disponível</div></div>
+    <div class="counter"><div class="counter-num c-yellow">${res}</div><div class="counter-label">Reservado</div></div>
+    <div class="counter"><div class="counter-num c-red">${vend}</div><div class="counter-label">Vendido</div></div>`;
+  let filtrados = filtroAtual==='Todos' ? produtos : produtos.filter(p => p.status===filtroAtual);
+  if (filtroCat!=='Todas') filtrados = filtrados.filter(p => p.categoria && p.categoria.includes(filtroCat));
+  const lista = document.getElementById('lista-produtos');
+  if (!filtrados.length) { lista.innerHTML = `<div class="empty"><div class="empty-icon">📦</div><p>Nenhum produto aqui.</p></div>`; return; }
+  lista.innerHTML = filtrados.map(p => {
+    const medidas = [p.largura,p.altura,p.prof].filter(Boolean).map(m=>m+'cm').join(' × ');
+    const fotosHtml = p.fotos&&p.fotos.length
+      ? `<div class="card-photos">${p.fotos.map(f=>`<img class="card-photo" src="${f}">`).join('')}</div>`
+      : `<div class="card-no-photo">📦</div>`;
+    return `<div class="product-card">${fotosHtml}
+      <div class="card-body">
+        <div class="card-header">
+          <div class="card-name">${p.nome}</div>
+          <span class="status-badge status-${p.status}">${p.status}</span>
+        </div>
+        <div class="card-meta">
+          ${p.categoria?`<span class="meta-tag" style="color:var(--gold);border-color:var(--gold-dim);">${p.categoria}</span>`:''}
+          ${medidas?`<span class="meta-tag">📐 ${medidas}</span>`:''}
+          ${p.conservacao?`<span class="meta-tag">${p.conservacao}</span>`:''}
+        </div>
+        <div class="card-price">R$ ${Number(p.venda).toLocaleString('pt-BR')}
+          ${p.custo?`<small> · custo R$ ${Number(p.custo).toLocaleString('pt-BR')}</small>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="font-size:13px;color:var(--muted);">Estoque:</span>
+          <span style="font-size:16px;font-weight:700;color:${(p.qtd||1)<=1?'var(--red)':'var(--green)'};">${p.qtd||1} un.</span>
+        </div>
+        <select onchange="mudarStatus(${p.id},this.value)" style="width:100%;margin-bottom:10px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px;">
+          <option ${p.status==='Disponível'?'selected':''}>Disponível</option>
+          <option ${p.status==='Reservado'?'selected':''}>Reservado</option>
+          <option ${p.status==='Vendido'?'selected':''}>Vendido</option>
+        </select>
+        <div class="card-actions">
+          <button class="btn btn-green btn-sm" onclick="abrirModalVenda(${p.id})">💰 Vender</button>
+          <button class="btn btn-gold btn-sm" onclick="gerarAnuncio(${p.id})">📢 Anúncio</button>
+          <button class="btn btn-outline btn-sm" onclick="editarProduto(${p.id})">✏️</button>
+          <button class="btn btn-outline btn-sm" onclick="pedirDelete(${p.id})">🗑</button>
+        </div>
+        <div class="cadastrado-by">Cadastrado por ${p.quem||''} em ${p.data||''}</div>
+      </div></div>`;
+  }).join('');
+}
+
+// ═══ FILTROS ════════════════════════════════════════
+function filtrar(status, el) {
+  filtroAtual = status;
+  document.querySelectorAll('.filter-bar:first-of-type .filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active'); renderEstoque();
+}
+function filtrarCat(cat, el) {
+  filtroCat = cat;
+  document.querySelectorAll('#cat-filter-bar .filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active'); renderEstoque();
+}
+function filtrarFinPagto(p, el) {
+  filtroFinPagto = p;
+  document.querySelectorAll('#fin-pagto-filter .filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ═══ MODAL VENDA ════════════════════════════════════
+let pagtoItens = []; // [{forma, valor}]
+
+function abrirModalVenda(id) {
+  const p = produtos.find(x => x.id===id);
+  if (!p) return;
+  vendaId = id;
+  document.getElementById('venda-produto-nome').textContent = p.nome;
+  document.getElementById('venda-produto-preco').textContent = `Preço sugerido: R$ ${Number(p.venda).toLocaleString('pt-BR')}`;
+  document.getElementById('v-valor').value = p.venda;
+  document.getElementById('v-comprador').value = '';
+  document.getElementById('v-telefone').value = '';
+  document.getElementById('v-entrada').value = '';
+  document.getElementById('v-obs-fiado').value = '';
+  document.getElementById('v-obs').value = '';
+  document.getElementById('fiado-extra').style.display = 'none';
+  const hoje = new Date().toISOString().split('T')[0];
+  document.getElementById('v-data').value = hoje;
+  pagtoItens = [];
+  renderPagtoLista();
+  adicionarPagto();
+  document.getElementById('modal-venda').classList.add('show');
+}
+
+function adicionarPagto() {
+  pagtoItens.push({ forma: 'Dinheiro', valor: '' });
+  renderPagtoLista();
+}
+
+function renderPagtoLista() {
+  const opts = ['Dinheiro','PIX','PIX-terceiro','Crédito','Débito','Fiado'];
+  const emojis = {'Dinheiro':'💵','PIX':'⚡','PIX-terceiro':'🔄','Crédito':'💳','Débito':'💳','Fiado':'📋'};
+  document.getElementById('pagto-lista').innerHTML = pagtoItens.map((item, i) => `
+    <div style="display:flex;gap:8px;align-items:center;">
+      <select onchange="atualizarPagto(${i},'forma',this.value)" style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:10px;">
+        ${opts.map(o=>`<option value="${o}" ${item.forma===o?'selected':''}>${emojis[o]} ${o==='PIX-terceiro'?'PIX de terceiro':o}</option>`).join('')}
+      </select>
+      <input type="number" placeholder="R$" value="${item.valor}" onchange="atualizarPagto(${i},'valor',this.value)" style="width:100px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:10px;">
+      ${pagtoItens.length>1?`<button onclick="removerPagto(${i})" style="background:var(--red);color:white;border:none;border-radius:6px;padding:8px 10px;cursor:pointer;font-size:14px;">✕</button>`:''}
+    </div>`).join('');
+  // Mostrar campo fiado se tiver fiado
+  const temFiado = pagtoItens.some(p=>p.forma==='Fiado');
+  document.getElementById('fiado-extra').style.display = temFiado ? 'block' : 'none';
+}
+
+function atualizarPagto(i, campo, val) {
+  pagtoItens[i][campo] = campo==='valor' ? val : val;
+  if (campo==='forma') renderPagtoLista();
+}
+
+function removerPagto(i) {
+  pagtoItens.splice(i,1);
+  renderPagtoLista();
+}
+
+function fecharModalVenda() { document.getElementById('modal-venda').classList.remove('show'); vendaId=null; }
+
+function confirmarVenda() {
+  if (!pagtoItens.length) { showToast('⚠️ Adicione forma de pagamento'); return; }
+  const totalPagto = pagtoItens.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+  if (!totalPagto) { showToast('⚠️ Informe os valores de pagamento'); return; }
+  const valorVenda = parseFloat(document.getElementById('v-valor').value);
+  if (!valorVenda) { showToast('⚠️ Informe o valor da venda'); return; }
+
+  const p = produtos.find(x => x.id===vendaId);
+  if (!p) return;
+
+  const temFiado = pagtoItens.some(x=>x.forma==='Fiado');
+  const valorFiado = temFiado ? (parseFloat(pagtoItens.find(x=>x.forma==='Fiado')?.valor)||0) : 0;
+  const entrada = valorVenda - valorFiado;
+  const pagtoDesc = pagtoItens.map(x=>`${x.forma} R$${Number(x.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}`).join(' + ');
+
+  const venda = {
+    id: Date.now(),
+    produtoId: p.id,
+    produtoNome: p.nome,
+    produtoCusto: parseFloat(p.custo)||0,
+    valor: valorVenda,
+    pagto: pagtoItens.length===1 ? pagtoItens[0].forma : 'Misto',
+    pagtoItens: [...pagtoItens],
+    pagtoDesc,
+    comprador: document.getElementById('v-comprador').value.trim(),
+    telefone: document.getElementById('v-telefone').value.trim(),
+    obs: document.getElementById('v-obs').value.trim(),
+    obsFiado: document.getElementById('v-obs-fiado').value.trim(),
+    data: document.getElementById('v-data').value,
+    entrada,
+    pago: entrada,
+    pendente: valorFiado,
+    abatimentos: [],
+    quitado: !temFiado
+  };
+  vendas.unshift(venda);
+  p.qtd = (p.qtd||1) - 1;
+  if (p.qtd <= 0) { p.qtd = 0; p.status = 'Vendido'; }
+  saveData();
+  fecharModalVenda();
+  renderEstoque();
+  showToast(`✅ Venda: ${pagtoDesc}`);
+}
+
+// ═══ FINANCEIRO ══════════════════════════════════════
+function renderFinanceiro() {
+  const de = document.getElementById('fin-de').value;
+  const ate = document.getElementById('fin-ate').value;
+  let lista = [...vendas];
+  if (de) lista = lista.filter(v => v.data >= de);
+  if (ate) lista = lista.filter(v => v.data <= ate);
+  if (filtroFinPagto !== 'Todos') lista = lista.filter(v => v.pagto === filtroFinPagto);
+
+  const totalVendido = lista.reduce((s,v) => s+v.valor, 0);
+  const totalRecebido = lista.reduce((s,v) => s+v.pago+(v.abatimentos||[]).reduce((a,b)=>a+b.valor,0), 0);
+  const totalLucro = lista.reduce((s,v) => s+(v.valor - v.produtoCusto), 0);
+  const totalFiado = lista.filter(v=>!v.quitado).reduce((s,v) => s+v.pendente-(v.abatimentos||[]).reduce((a,b)=>a+b.valor,0), 0);
+
+  // Totais por pagto
+  const porPagto = {};
+  lista.forEach(v => { porPagto[v.pagto] = (porPagto[v.pagto]||0) + v.valor; });
+
+  document.getElementById('fin-resumo').innerHTML = `
+    <div class="counter-bar">
+      <div class="counter"><div class="counter-num c-gold">R$${totalVendido.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div><div class="counter-label">Vendido</div></div>
+      <div class="counter"><div class="counter-num c-green">R$${totalLucro.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div><div class="counter-label">Lucro</div></div>
+      <div class="counter"><div class="counter-num c-red">R$${totalFiado.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div><div class="counter-label">Fiado</div></div>
+    </div>
+    <div class="pagto-grid">
+      ${Object.entries(porPagto).map(([k,v])=>`
+        <div class="pagto-item">
+          <div class="pagto-item-label">${k}</div>
+          <div class="pagto-item-valor c-gold">R$ ${v.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+        </div>`).join('')}
+    </div>`;
+
+  if (!lista.length) {
+    document.getElementById('fin-lista').innerHTML = `<div class="empty"><div class="empty-icon">📊</div><p>Nenhuma venda no período.</p></div>`;
+    return;
+  }
+  document.getElementById('fin-lista').innerHTML = lista.map(v => finCardHtml(v)).join('');
+}
+
+function finCardHtml(v) {
+  const abats = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
+  const saldo = v.pendente - abats;
+  return `<div class="fin-card">
+    <div class="fin-card-header">
+      <div class="fin-produto">${v.produtoNome}</div>
+      <div class="fin-valor">R$ ${v.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    </div>
+    <div class="fin-meta">
+      📅 ${v.data ? new Date(v.data+'T12:00:00').toLocaleDateString('pt-BR') : ''}
+      ${v.comprador?' · 👤 '+v.comprador:''}
+      ${v.telefone?` · 📱 <a href="tel:${v.telefone}" style="color:var(--green);">${v.telefone}</a>`:''}
+    </div>
+    <span class="fin-pagto pagto-${v.pagto.replace(' ','-')}">${v.pagtoDesc || v.pagto}</span>
+    ${v.obs?`<div style="font-size:12px;color:var(--muted);margin-top:6px;">📝 ${v.obs}</div>`:''}
+    ${v.pagto==='Fiado'&&!v.quitado?`
+      <div class="fiado-info">
+        <div class="fiado-saldo" style="color:var(--red);">💰 Saldo devedor: <strong>R$ ${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></div>
+        ${v.entrada>0?`<div style="font-size:12px;color:var(--muted);">Entrada: R$ ${v.entrada.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`:''}
+        ${(v.abatimentos||[]).map(a=>`<div style="font-size:12px;color:var(--green);">✓ Abatido R$ ${a.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})} em ${new Date(a.data+'T12:00:00').toLocaleDateString('pt-BR')}</div>`).join('')}
+        ${v.obsFiado?`<div style="font-size:12px;color:var(--muted);margin-top:4px;">📝 ${v.obsFiado}</div>`:''}
+        <div class="fiado-abatimento">
+          <input type="number" id="abat-${v.id}" placeholder="R$ abater">
+          <button class="btn btn-outline abat-btn" onclick="abaterFiado(${v.id})">Abater</button>
+        </div>
+        <button class="btn btn-green mt" style="padding:8px;font-size:12px;" onclick="quitarFiado(${v.id})">✅ Marcar como quitado</button>
+      </div>`:
+    v.pagto==='Fiado'&&v.quitado?`<div style="font-size:12px;color:var(--green);margin-top:6px;">✅ Quitado</div>`:''}
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;">Custo: R$ ${v.produtoCusto.toLocaleString('pt-BR',{minimumFractionDigits:2})} · Lucro: <span style="color:var(--green);">R$ ${(v.valor-v.produtoCusto).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
+  </div>`;
+}
+
+// ═══ FIADOS ══════════════════════════════════════════
+function renderFiados() {
+  const fiados = vendas.filter(v => v.pagto==='Fiado' && !v.quitado);
+  const lista = document.getElementById('fiados-lista');
+  if (!fiados.length) {
+    lista.innerHTML = `<div class="empty"><div class="empty-icon">🎉</div><p>Nenhum fiado pendente!</p></div>`; return;
+  }
+  const total = fiados.reduce((s,v) => {
+    const abats = (v.abatimentos||[]).reduce((a,b)=>a+b.valor,0);
+    return s + v.pendente - abats;
+  }, 0);
+  lista.innerHTML = `
+    <div class="resumo-card" style="margin-bottom:16px;">
+      <div class="resumo-title">Total em aberto</div>
+      <div class="resumo-valor c-red">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    </div>
+    ${fiados.map(v => finCardHtml(v)).join('')}`;
+}
+
+function abaterFiado(id) {
+  const v = vendas.find(x=>x.id===id);
+  if (!v) return;
+  const val = parseFloat(document.getElementById('abat-'+id).value);
+  if (!val||val<=0) { showToast('⚠️ Informe o valor'); return; }
+  const abats = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
+  const saldo = v.pendente - abats;
+  if (val > saldo) { showToast('⚠️ Valor maior que o saldo'); return; }
+  if (!v.abatimentos) v.abatimentos = [];
+  v.abatimentos.push({ valor: val, data: new Date().toISOString().split('T')[0] });
+  const novoSaldo = saldo - val;
+  if (novoSaldo <= 0) { v.quitado = true; showToast('✅ Fiado quitado!'); }
+  else showToast(`✅ Abatido R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}! Saldo: R$ ${novoSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}`);
+  saveData();
+  renderFiados();
+  renderFinanceiro();
+}
+
+function quitarFiado(id) {
+  const v = vendas.find(x=>x.id===id);
+  if (v) { v.quitado = true; saveData(); showToast('✅ Fiado quitado!'); renderFiados(); renderFinanceiro(); }
+}
+
+// ═══ STATUS / DELETE ═════════════════════════════════
+function mudarStatus(id, s) {
+  const p = produtos.find(x=>x.id===id);
+  if (p) { p.status=s; saveData(); renderEstoque(); }
+}
+function pedirDelete(id) { deleteId=id; document.getElementById('modal-delete').classList.add('show'); }
+function confirmarDelete() {
+  produtos = produtos.filter(p=>p.id!==deleteId);
+  saveData(); fecharModalDelete(); renderEstoque(); showToast('🗑 Produto excluído');
+}
+function fecharModalDelete() { document.getElementById('modal-delete').classList.remove('show'); deleteId=null; }
+
+// ═══ EDITAR ══════════════════════════════════════════
+function editarProduto(id) {
+  const p = produtos.find(x=>x.id===id); if (!p) return;
+  editId = id;
+  document.getElementById('e-nome').value = p.nome||'';
+  document.getElementById('e-desc').value = p.desc||'';
+  document.getElementById('e-largura').value = p.largura||'';
+  document.getElementById('e-altura').value = p.altura||'';
+  document.getElementById('e-prof').value = p.prof||'';
+  document.getElementById('e-conservacao').value = p.conservacao||'✅ Produto novo';
+  document.getElementById('e-origem').value = p.origem||'🔨 Leilão';
+  document.getElementById('e-categoria').value = p.categoria||'📦 Outros';
+  document.getElementById('e-custo').value = p.custo||'';
+  document.getElementById('e-venda').value = p.venda||'';
+  document.getElementById('e-qtd').value = p.qtd||1;
+  document.getElementById('modal-editar').classList.add('show');
+}
+function salvarEdicao() {
+  const p = produtos.find(x=>x.id===editId); if (!p) return;
+  p.nome = document.getElementById('e-nome').value.trim();
+  p.desc = document.getElementById('e-desc').value.trim();
+  p.largura = document.getElementById('e-largura').value;
+  p.altura = document.getElementById('e-altura').value;
+  p.prof = document.getElementById('e-prof').value;
+  p.conservacao = document.getElementById('e-conservacao').value;
+  p.origem = document.getElementById('e-origem').value;
+  p.categoria = document.getElementById('e-categoria').value;
+  p.custo = document.getElementById('e-custo').value;
+  p.venda = document.getElementById('e-venda').value;
+  p.qtd = parseInt(document.getElementById('e-qtd').value)||1;
+  if (p.qtd>0 && p.status==='Vendido') p.status='Disponível';
+  if (p.qtd<=0) p.status='Vendido';
+  saveData(); fecharModalEditar(); renderEstoque(); showToast('✅ Produto atualizado!');
+}
+function fecharModalEditar() { document.getElementById('modal-editar').classList.remove('show'); editId=null; }
+
+// ═══ ANÚNCIO ═════════════════════════════════════════
+function gerarAnuncio(id) {
+  anuncioProdutoId = id;
+  const p = produtos.find(x=>x.id===id); if (!p) return;
+  const medidas = [p.largura,p.altura,p.prof].filter(Boolean).map(m=>m+'cm').join(' × ');
+  let txt = `🔥 *${p.nome}*\n\n`;
+  if (medidas) txt += `📐 Medidas: ${medidas}\n`;
+  if (p.conservacao) txt += `⭐ Estado: ${p.conservacao}\n`;
+  if (p.desc) txt += `📝 Detalhes: ${p.desc}\n`;
+  if ((p.qtd||1)>1) txt += `📦 Quantidade: ${p.qtd} unidades\n`;
+  txt += `\n💰 *R$ ${Number(p.venda).toLocaleString('pt-BR')}*\n\n`;
+  txt += `🚚 Entregas em: Itaúna, Mateus Leme, Juatuba, Betim, Contagem, Itatiaiuçu, Igarapé e Bicas — consulte o frete!\n\n`;
+  txt += `📲 Chame no WhatsApp para mais informações!`;
+  document.getElementById('anuncio-texto').textContent = txt;
+  document.getElementById('modal-anuncio').classList.add('show');
+}
+function verFotos() {
+  const p = produtos.find(x=>x.id===anuncioProdutoId);
+  if (!p||!p.fotos||!p.fotos.length) { showToast('Nenhuma foto cadastrada'); return; }
+  document.getElementById('fotos-grid').innerHTML = p.fotos.map(f=>`<img src="${f}" style="width:100%;border-radius:8px;">`).join('');
+  document.getElementById('modal-anuncio').classList.remove('show');
+  document.getElementById('modal-fotos').classList.add('show');
+}
+function fecharModalFotos() { document.getElementById('modal-fotos').classList.remove('show'); document.getElementById('modal-anuncio').classList.add('show'); }
+function abrirWhatsApp() { window.open(`https://wa.me/?text=${encodeURIComponent(document.getElementById('anuncio-texto').textContent)}`, '_blank'); }
+function abrirMarketplace() { window.open('https://www.facebook.com/marketplace/create/item','_blank'); setTimeout(()=>showToast('💡 Cole o texto no Marketplace!'),500); }
+function copiarAnuncio() { navigator.clipboard.writeText(document.getElementById('anuncio-texto').textContent).then(()=>{ showToast('📋 Copiado!'); fecharModal(); }); }
+function fecharModal() { document.getElementById('modal-anuncio').classList.remove('show'); }
+
+// ═══ TOAST ═══════════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ═══ INIT ════════════════════════════════════════════
+loadData();
+</script>
+</body>
+</html>
