@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Leilão & Vendas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1a1a1a;color:#eee;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+.topbar{background:#111;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #c9a84c;position:sticky;top:0;z-index:100}
+.topbar h1{color:#c9a84c;font-size:1.1rem;font-weight:700}
+.drive-status{display:flex;align-items:center;gap:8px;font-size:0.75rem}
+.drive-btn{background:#c9a84c;color:#111;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-weight:700;font-size:0.75rem;white-space:nowrap}
+.drive-btn.connected{background:#2d5a27;color:#7dca75}
+.drive-btn:hover{opacity:0.9}
+.tabs{display:flex;background:#111;border-bottom:1px solid #333;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{flex:1;padding:10px 4px;text-align:center;cursor:pointer;color:#888;font-size:0.78rem;border-bottom:2px solid transparent;white-space:nowrap;min-width:60px}
+.tab.active{color:#c9a84c;border-bottom-color:#c9a84c}
+.content{display:none;padding:16px}
+.content.active{display:block}
+.form-group{margin-bottom:14px}
+label{display:block;color:#c9a84c;font-size:0.8rem;font-weight:600;margin-bottom:5px}
+input,textarea,select{width:100%;background:#252525;border:1px solid #444;border-radius:8px;padding:10px 12px;color:#eee;font-size:0.9rem;outline:none}
+input:focus,textarea:focus,select:focus{border-color:#c9a84c}
+textarea{resize:vertical;min-height:70px}
+.btn{width:100%;padding:12px;border:none;border-radius:8px;font-size:0.95rem;font-weight:700;cursor:pointer;margin-bottom:8px}
+.btn-primary{background:#c9a84c;color:#111}
+.btn-secondary{background:#333;color:#eee}
+.btn-danger{background:#8b2020;color:#eee}
+.btn-success{background:#2d5a27;color:#7dca75}
+.btn:hover{opacity:0.9}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.photos-area{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.photo-slot{aspect-ratio:1;border:2px dashed #444;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#1e1e1e;position:relative;overflow:hidden}
+.photo-slot img{width:100%;height:100%;object-fit:cover;border-radius:6px}
+.photo-slot .del-photo{position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.7);border:none;color:#ff6b6b;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;display:none}
+.photo-slot:hover .del-photo{display:flex;align-items:center;justify-content:center}
+.photo-add-btn{background:none;border:none;color:#666;font-size:2rem;width:100%;height:100%;cursor:pointer}
+.photo-uploading{position:absolute;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#c9a84c;text-align:center;flex-direction:column;gap:4px}
+.spinner{width:24px;height:24px;border:3px solid #333;border-top-color:#c9a84c;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.card{background:#222;border-radius:12px;padding:14px;margin-bottom:12px;border:1px solid #333}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.card-title{font-weight:700;font-size:0.95rem;flex:1}
+.badge{padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;white-space:nowrap}
+.badge-new{background:#1a4a1a;color:#7dca75}
+.badge-good{background:#1a3a4a;color:#75b5ca}
+.badge-ok{background:#4a3a1a;color:#cab975}
+.badge-damaged{background:#4a1a1a;color:#ca7575}
+.card-info{font-size:0.8rem;color:#aaa;margin-top:6px;line-height:1.5}
+.card-info strong{color:#eee}
+.card-photos{display:flex;gap:6px;margin-top:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.card-photos img{width:70px;height:70px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:pointer}
+.card-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.card-btn{flex:1;padding:7px;border:none;border-radius:6px;font-size:0.78rem;font-weight:600;cursor:pointer;min-width:70px;text-align:center}
+.cb-wpp{background:#1a4a1a;color:#7dca75}
+.cb-fb{background:#1a2a4a;color:#75a8ca}
+.cb-edit{background:#2a2a1a;color:#cab975}
+.cb-sell{background:#4a3a1a;color:#c9a84c}
+.cb-del{background:#3a1a1a;color:#ca7575}
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filter-bar input,.filter-bar select{flex:1;min-width:120px}
+.fin-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.fin-card{background:#222;border-radius:10px;padding:14px;text-align:center;border:1px solid #333}
+.fin-card .val{font-size:1.2rem;font-weight:700;color:#c9a84c}
+.fin-card .lbl{font-size:0.72rem;color:#888;margin-top:3px}
+.fiado-card{background:#2a1a0a;border:1px solid #8b4513}
+.venda-item{background:#1e1e1e;border-radius:8px;padding:10px;margin-bottom:8px;font-size:0.83rem}
+.venda-item .vi-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.venda-item .vi-title{font-weight:700}
+.venda-item .vi-date{color:#888;font-size:0.75rem}
+.venda-item .vi-details{color:#aaa;line-height:1.5}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;overflow-y:auto;padding:16px}
+.modal.open{display:flex;align-items:flex-start;justify-content:center}
+.modal-box{background:#1e1e1e;border-radius:14px;padding:20px;width:100%;max-width:500px;margin:auto}
+.modal-title{color:#c9a84c;font-size:1rem;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer}
+.pagto-list{margin-bottom:10px}
+.pagto-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center}
+.pagto-row select,.pagto-row input{margin:0}
+.pagto-row button{background:#4a1a1a;color:#ca7575;border:none;border-radius:6px;padding:8px 10px;cursor:pointer}
+.abat-list{margin-top:8px;font-size:0.8rem}
+.abat-item{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #333;color:#aaa}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#c9a84c;color:#111;padding:10px 20px;border-radius:20px;font-weight:700;font-size:0.85rem;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+.cat-icon{font-size:1.1rem}
+.section-title{color:#c9a84c;font-size:0.85rem;font-weight:700;margin-bottom:10px;border-bottom:1px solid #333;padding-bottom:6px}
+.photo-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:500;align-items:center;justify-content:center}
+.photo-lightbox.open{display:flex}
+.photo-lightbox img{max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px}
+.photo-lightbox-close{position:absolute;top:16px;right:16px;background:rgba(0,0,0,0.5);border:none;color:#fff;font-size:1.5rem;cursor:pointer;border-radius:50%;width:36px;height:36px}
+.empty-state{text-align:center;padding:40px 20px;color:#555}
+.empty-state .icon{font-size:3rem;margin-bottom:10px}
+.price-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.drive-info{background:#1a2a1a;border:1px solid #2d5a27;border-radius:8px;padding:12px;margin-bottom:14px;font-size:0.82rem;color:#7dca75}
+.drive-info strong{display:block;margin-bottom:4px}
+.hidden{display:none}
+.tab-count{background:#c9a84c;color:#111;border-radius:10px;padding:1px 6px;font-size:0.65rem;font-weight:700;margin-left:3px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🏷️ Leilão & Vendas</h1>
+  <div class="drive-status">
+    <span id="drive-user-name" style="color:#aaa;font-size:0.72rem"></span>
+    <button class="drive-btn" id="drive-btn" onclick="toggleDrive()">☁️ Drive</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('cadastrar')">➕ Cadastrar</div>
+  <div class="tab" onclick="showTab('estoque')">📦 Estoque<span class="tab-count" id="count-estoque">0</span></div>
+  <div class="tab" onclick="showTab('financeiro')">💰 Financeiro</div>
+  <div class="tab" onclick="showTab('fiados')">⏳ Fiados</div>
+</div>
+
+<!-- TAB CADASTRAR -->
+<div id="tab-cadastrar" class="content active">
+  <div id="drive-banner" class="drive-info hidden">
+    <strong>☁️ Google Drive conectado</strong>
+    Fotos serão enviadas automaticamente para a pasta Leilao-Vendas no Drive.
+  </div>
+
+  <div class="form-group">
+    <label>Fotos do produto</label>
+    <div class="photos-area" id="photos-area">
+      <div class="photo-slot" id="add-photo-slot" onclick="addPhoto()">
+        <button class="photo-add-btn">📷</button>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFiles(this)">
+    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" onchange="handleFiles(this)">
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="font-size:0.82rem;padding:8px" onclick="document.getElementById('camera-input').click()">📸 Câmera</button>
+      <button class="btn btn-secondary" style="font-size:0.82rem;padding:8px" onclick="document.getElementById('file-input').click()">🖼️ Galeria</button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Nome do produto *</label>
+    <input type="text" id="nome" placeholder="Ex: Geladeira Brastemp 450L">
+  </div>
+
+  <div class="form-group">
+    <label>Categoria</label>
+    <select id="categoria">
+      <option value="❄️ Eletrodomésticos">❄️ Eletrodomésticos</option>
+      <option value="🌬️ Climatização">🌬️ Climatização</option>
+      <option value="🪑 Móveis de Escritório">🪑 Móveis de Escritório</option>
+      <option value="🏠 Móveis e Casa">🏠 Móveis e Casa</option>
+      <option value="🔧 Ferramentas">🔧 Ferramentas</option>
+      <option value="💻 Eletrônicos">💻 Eletrônicos</option>
+      <option value="📦 Outros">📦 Outros</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Estado de conservação</label>
+    <select id="estado">
+      <option value="✅ Produto novo">✅ Produto novo</option>
+      <option value="👍 Ótimo estado de conservação">👍 Ótimo estado de conservação</option>
+      <option value="🆗 Razoável estado de conservação">🆗 Razoável estado de conservação</option>
+      <option value="⚠️ Produto com avarias">⚠️ Produto com avarias</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Descrição / Especificações</label>
+    <textarea id="descricao" placeholder="Modelo, medidas, voltagem, cor, etc."></textarea>
+  </div>
+
+  <div class="price-row">
+    <div class="form-group">
+      <label>Preço de custo (R$)</label>
+      <input type="number" id="preco-custo" placeholder="0,00" step="0.01">
+    </div>
+    <div class="form-group">
+      <label>Preço de venda (R$)</label>
+      <input type="number" id="preco-venda" placeholder="0,00" step="0.01">
+    </div>
+  </div>
+
+  <div class="price-row">
+    <div class="form-group">
+      <label>Quantidade</label>
+      <input type="number" id="quantidade" value="1" min="1">
+    </div>
+    <div class="form-group">
+      <label>Origem (interno)</label>
+      <input type="text" id="origem" placeholder="Ex: Leilão BH">
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="cadastrarProduto()" id="btn-cadastrar">✅ Cadastrar Produto</button>
+  <button class="btn btn-secondary" onclick="limparForm()">🗑️ Limpar</button>
+</div>
+
+<!-- TAB ESTOQUE -->
+<div id="tab-estoque" class="content">
+  <div class="filter-bar">
+    <input type="text" id="search-estoque" placeholder="🔍 Buscar..." oninput="renderEstoque()">
+    <select id="filter-cat" onchange="renderEstoque()">
+      <option value="">Todas categorias</option>
+      <option value="❄️ Eletrodomésticos">❄️ Eletrodomésticos</option>
+      <option value="🌬️ Climatização">🌬️ Climatização</option>
+      <option value="🪑 Móveis de Escritório">🪑 Móveis de Escritório</option>
+      <option value="🏠 Móveis e Casa">🏠 Móveis e Casa</option>
+      <option value="🔧 Ferramentas">🔧 Ferramentas</option>
+      <option value="💻 Eletrônicos">💻 Eletrônicos</option>
+      <option value="📦 Outros">📦 Outros</option>
+    </select>
+  </div>
+  <div id="estoque-list"></div>
+</div>
+
+<!-- TAB FINANCEIRO -->
+<div id="tab-financeiro" class="content">
+  <div class="filter-bar">
+    <input type="date" id="fin-de" style="flex:1">
+    <input type="date" id="fin-ate" style="flex:1">
+    <select id="fin-pagto" style="flex:1">
+      <option value="">Todos meios</option>
+      <option>Dinheiro</option>
+      <option>PIX</option>
+      <option>Cartão de crédito</option>
+      <option>Cartão de débito</option>
+      <option>Pix de terceiro</option>
+      <option>Fiado</option>
+      <option>Misto</option>
+    </select>
+    <button class="btn btn-secondary" style="width:auto;padding:8px 14px;font-size:0.82rem" onclick="renderFinanceiro()">🔍</button>
+  </div>
+
+  <div class="fin-summary" id="fin-summary"></div>
+  <div class="section-title">Histórico de vendas</div>
+  <div id="vendas-list"></div>
+</div>
+
+<!-- TAB FIADOS -->
+<div id="tab-fiados" class="content">
+  <div id="fiados-list"></div>
+</div>
+
+<!-- MODAL VENDA -->
+<div class="modal" id="modal-venda">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>💰 Registrar Venda</span>
+      <button class="modal-close" onclick="closeModal('modal-venda')">✕</button>
+    </div>
+    <div id="venda-produto-info" style="font-size:0.85rem;color:#aaa;margin-bottom:14px"></div>
+
+    <div class="form-group">
+      <label>Comprador</label>
+      <input type="text" id="v-comprador" placeholder="Nome do cliente">
+    </div>
+    <div class="form-group">
+      <label>Telefone</label>
+      <input type="tel" id="v-telefone" placeholder="(37) 9 9999-9999">
+    </div>
+    <div class="form-group">
+      <label>Data da venda</label>
+      <input type="date" id="v-data">
+    </div>
+    <div class="form-group">
+      <label>Valor de venda (R$)</label>
+      <input type="number" id="v-valor" placeholder="0,00" step="0.01" oninput="checkFiado()">
+    </div>
+
+    <div class="form-group">
+      <label>Pagamento</label>
+      <div class="pagto-list" id="pagto-list"></div>
+      <button class="btn btn-secondary" style="font-size:0.82rem;padding:8px" onclick="addPagtoRow()">+ Adicionar forma de pagamento</button>
+    </div>
+
+    <div id="fiado-section" class="hidden">
+      <div class="form-group">
+        <label>Entrada (R$) — opcional</label>
+        <input type="number" id="v-entrada" placeholder="0,00" step="0.01" oninput="calcPendente()">
+      </div>
+      <div style="background:#2a1a0a;border-radius:8px;padding:10px;margin-bottom:14px;font-size:0.85rem">
+        <strong>Pendente: </strong><span id="v-pendente" style="color:#ca7575">R$ 0,00</span>
+      </div>
+      <div class="form-group">
+        <label>Observações do fiado (combinado, prazo, etc.)</label>
+        <textarea id="v-obs-fiado" placeholder="Ex: Vai pagar R$100 toda semana..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Observações gerais</label>
+      <textarea id="v-obs" placeholder="Anotações..."></textarea>
+    </div>
+
+    <button class="btn btn-primary" onclick="confirmarVenda()">✅ Confirmar Venda</button>
+  </div>
+</div>
+
+<!-- MODAL EDITAR PRODUTO -->
+<div class="modal" id="modal-editar">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>✏️ Editar Produto</span>
+      <button class="modal-close" onclick="closeModal('modal-editar')">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label>Nome do produto</label>
+      <input type="text" id="e-nome">
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="e-categoria">
+        <option value="❄️ Eletrodomésticos">❄️ Eletrodomésticos</option>
+        <option value="🌬️ Climatização">🌬️ Climatização</option>
+        <option value="🪑 Móveis de Escritório">🪑 Móveis de Escritório</option>
+        <option value="🏠 Móveis e Casa">🏠 Móveis e Casa</option>
+        <option value="🔧 Ferramentas">🔧 Ferramentas</option>
+        <option value="💻 Eletrônicos">💻 Eletrônicos</option>
+        <option value="📦 Outros">📦 Outros</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Estado</label>
+      <select id="e-estado">
+        <option value="✅ Produto novo">✅ Produto novo</option>
+        <option value="👍 Ótimo estado de conservação">👍 Ótimo estado de conservação</option>
+        <option value="🆗 Razoável estado de conservação">🆗 Razoável estado de conservação</option>
+        <option value="⚠️ Produto com avarias">⚠️ Produto com avarias</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Descrição</label>
+      <textarea id="e-descricao"></textarea>
+    </div>
+    <div class="price-row">
+      <div class="form-group">
+        <label>Preço de custo</label>
+        <input type="number" id="e-custo" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Preço de venda</label>
+        <input type="number" id="e-venda" step="0.01">
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="form-group">
+        <label>Quantidade</label>
+        <input type="number" id="e-qtd" min="1">
+      </div>
+      <div class="form-group">
+        <label>Origem (interno)</label>
+        <input type="text" id="e-origem">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="salvarEdicao()">💾 Salvar alterações</button>
+  </div>
+</div>
+
+<!-- MODAL FIADO ABATER -->
+<div class="modal" id="modal-abater">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>⏳ Gerenciar Fiado</span>
+      <button class="modal-close" onclick="closeModal('modal-abater')">✕</button>
+    </div>
+    <div id="abater-info" style="font-size:0.85rem;margin-bottom:14px"></div>
+    <div class="form-group">
+      <label>Valor a abater (R$)</label>
+      <input type="number" id="abater-valor" placeholder="0,00" step="0.01">
+    </div>
+    <div class="form-group">
+      <label>Observação</label>
+      <input type="text" id="abater-obs" placeholder="Ex: Pix recebido">
+    </div>
+    <button class="btn btn-success" onclick="confirmarAbatimento()">✅ Registrar pagamento</button>
+    <button class="btn btn-danger" onclick="quitarFiado()" style="margin-top:8px">🏁 Marcar como quitado</button>
+    <div class="abat-list" id="abat-list"></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="photo-lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="photo-lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// GOOGLE DRIVE CONFIG
+// ============================================================
+const DRIVE_CLIENT_ID = '1092874149941-4h2nqgmgfecvq9jb233g2hcihk5lqle9.apps.googleusercontent.com';
+const DRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER_NAME = 'Leilao-Vendas';
+
+let driveConnected = false;
+let driveAccessToken = null;
+let driveFolderId = null;
+let driveUserName = '';
+
+// Load Google API
+function loadGoogleAPI() {
+  return new Promise((resolve) => {
+    if (window.gapi) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://apis.google.com/js/api.js';
+    s.onload = () => gapi.load('client:auth2', resolve);
+    document.head.appendChild(s);
+  });
+}
+
+async function initDrive() {
+  try {
+    await loadGoogleAPI();
+    await gapi.client.init({
+      clientId: DRIVE_CLIENT_ID,
+      scope: DRIVE_SCOPES,
+      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+    });
+    const authInstance = gapi.auth2.getAuthInstance();
+    if (authInstance.isSignedIn.get()) {
+      await onDriveSignIn(authInstance.currentUser.get());
+    }
+  } catch(e) {
+    console.error('Drive init error:', e);
+  }
+}
+
+async function toggleDrive() {
+  if (driveConnected) {
+    // Desconectar
+    try {
+      const auth = gapi.auth2.getAuthInstance();
+      await auth.signOut();
+    } catch(e) {}
+    driveConnected = false;
+    driveAccessToken = null;
+    driveFolderId = null;
+    driveUserName = '';
+    updateDriveUI();
+    showToast('Drive desconectado');
+    return;
+  }
+  // Conectar
+  try {
+    await loadGoogleAPI();
+    await gapi.client.init({
+      clientId: DRIVE_CLIENT_ID,
+      scope: DRIVE_SCOPES,
+      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+    });
+    const auth = gapi.auth2.getAuthInstance();
+    const user = await auth.signIn();
+    await onDriveSignIn(user);
+  } catch(e) {
+    console.error('Drive sign in error:', e);
+    showToast('Erro ao conectar Drive. Verifique o popup.');
+  }
+}
+
+async function onDriveSignIn(user) {
+  const profile = user.getBasicProfile();
+  driveUserName = profile.getName().split(' ')[0];
+  driveAccessToken = user.getAuthResponse().access_token;
+  driveConnected = true;
+  await getOrCreateDriveFolder();
+  updateDriveUI();
+  showToast('✅ Drive conectado: ' + driveUserName);
+}
+
+function updateDriveUI() {
+  const btn = document.getElementById('drive-btn');
+  const banner = document.getElementById('drive-banner');
+  const nameEl = document.getElementById('drive-user-name');
+  if (driveConnected) {
+    btn.textContent = '☁️ ' + driveUserName;
+    btn.classList.add('connected');
+    banner.classList.remove('hidden');
+    nameEl.textContent = '';
+  } else {
+    btn.textContent = '☁️ Drive';
+    btn.classList.remove('connected');
+    banner.classList.add('hidden');
+    nameEl.textContent = '';
+  }
+}
+
+async function getOrCreateDriveFolder() {
+  // Busca pasta principal
+  let res = await gapi.client.drive.files.list({
+    q: `name='${DRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: 'files(id,name)'
+  });
+  if (res.result.files.length > 0) {
+    driveFolderId = res.result.files[0].id;
+  } else {
+    // Cria pasta
+    let create = await gapi.client.drive.files.create({
+      resource: { name: DRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' },
+      fields: 'id'
+    });
+    driveFolderId = create.result.id;
+  }
+}
+
+async function getOrCreateProductFolder(productId, productName) {
+  if (!driveConnected || !driveFolderId) return null;
+  const folderName = productId + '_' + productName.replace(/[^a-zA-Z0-9À-ɏ\s]/g, '').trim().substring(0, 30);
+  let res = await gapi.client.drive.files.list({
+    q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and '${driveFolderId}' in parents and trashed=false`,
+    fields: 'files(id,name)'
+  });
+  if (res.result.files.length > 0) return res.result.files[0].id;
+  let create = await gapi.client.drive.files.create({
+    resource: { name: folderName, mimeType: 'application/vnd.google-apps.folder', parents: [driveFolderId] },
+    fields: 'id'
+  });
+  return create.result.id;
+}
+
+async function uploadPhotoToDrive(blob, fileName, productFolderId) {
+  if (!driveConnected || !productFolderId) return null;
+  // Refresh token if needed
+  try {
+    const auth = gapi.auth2.getAuthInstance();
+    const user = auth.currentUser.get();
+    if (user.isSignedIn()) {
+      driveAccessToken = user.getAuthResponse().access_token;
+    }
+  } catch(e) {}
+
+  const metadata = { name: fileName, parents: [productFolderId] };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', blob);
+  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,webContentLink', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + driveAccessToken },
+    body: form
+  });
+  const data = await res.json();
+  if (data.id) {
+    // Make publicly readable
+    await fetch(`https://www.googleapis.com/drive/v3/files/${data.id}/permissions`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + driveAccessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'reader', type: 'anyone' })
+    });
+    return { id: data.id, url: `https://drive.google.com/uc?export=view&id=${data.id}` };
+  }
+  return null;
+}
+
+async function deletePhotoFromDrive(fileId) {
+  if (!driveConnected || !fileId) return;
+  try {
+    await gapi.client.drive.files.delete({ fileId });
+  } catch(e) { console.error('Delete error:', e); }
+}
+
+async function deleteProductFolderFromDrive(produto) {
+  if (!driveConnected || !produto.driveFolderId) return;
+  try {
+    await gapi.client.drive.files.delete({ fileId: produto.driveFolderId });
+  } catch(e) { console.error('Folder delete error:', e); }
+}
+
+// ============================================================
+// APP DATA
+// ============================================================
+let produtos = [];
+let vendas = [];
+let fotosTmp = []; // Durante cadastro: [{blob, localUrl, driveId, driveUrl}]
+let editandoId = null;
+let vendaId = null;
+let pagtoItens = [];
+let fiado_id = null;
+let blobCache = {}; // produtoId -> [blob, blob, ...] — em memória apenas (sessão atual)
+
+function loadData() {
+  try { const r = localStorage.getItem('leilao-estoque-v1'); if(r) produtos = JSON.parse(r); } catch(e) { produtos = []; }
+  try { const r = localStorage.getItem('leilao-vendas-v1'); if(r) vendas = JSON.parse(r); } catch(e) { vendas = []; }
+  renderEstoque();
+  updateCounters();
+}
+
+function saveData() {
+  try { localStorage.setItem('leilao-estoque-v1', JSON.stringify(produtos)); } catch(e) { showToast('Erro ao salvar!'); }
+  try { localStorage.setItem('leilao-vendas-v1', JSON.stringify(vendas)); } catch(e) {}
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function fmt(v) { return 'R$ ' + parseFloat(v||0).toFixed(2).replace('.',','); }
+
+function showToast(msg, dur=3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const idx = ['cadastrar','estoque','financeiro','fiados'].indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  if (name === 'estoque') renderEstoque();
+  if (name === 'financeiro') renderFinanceiro();
+  if (name === 'fiados') renderFiados();
+}
+
+function updateCounters() {
+  document.getElementById('count-estoque').textContent = produtos.filter(p => !p.vendido).length;
+}
+
+// ============================================================
+// FOTOS
+// ============================================================
+function addPhoto() {
+  // mostra opções
+  document.getElementById('file-input').click();
+}
+
+function handleFiles(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  files.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const localUrl = e.target.result;
+      const blob = f;
+      fotosTmp.push({ blob, localUrl, driveId: null, driveUrl: null });
+      renderFotosTmp();
+    };
+    reader.readAsDataURL(f);
+  });
+  input.value = '';
+}
+
+// Salva blob como arquivo na galeria do Android via Web Share / download
+async function salvarFotoNaGaleria(blob, nome) {
+  try {
+    // Tenta Web Share API (Android Chrome salva na galeria)
+    if (navigator.canShare && navigator.canShare({ files: [new File([blob], nome, { type: 'image/jpeg' })] })) {
+      // Não compartilhar aqui — só guardar referência
+    }
+    // Cria URL de objeto para uso posterior
+    return URL.createObjectURL(blob);
+  } catch(e) {
+    return null;
+  }
+}
+
+function renderFotosTmp() {
+  const area = document.getElementById('photos-area');
+  area.innerHTML = '';
+  fotosTmp.forEach((f, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'photo-slot';
+    slot.innerHTML = `<img src="${f.localUrl}" alt="">
+      <button class="del-photo" onclick="removeFotoTmp(${i})">✕</button>`;
+    area.appendChild(slot);
+  });
+  // Add button
+  const add = document.createElement('div');
+  add.className = 'photo-slot';
+  add.id = 'add-photo-slot';
+  add.onclick = () => document.getElementById('file-input').click();
+  add.innerHTML = '<button class="photo-add-btn">📷</button>';
+  area.appendChild(add);
+}
+
+function removeFotoTmp(i) {
+  // Se já foi pro Drive, deletar
+  if (fotosTmp[i].driveId && driveConnected) {
+    deletePhotoFromDrive(fotosTmp[i].driveId);
+  }
+  fotosTmp.splice(i, 1);
+  renderFotosTmp();
+}
+
+function limparForm() {
+  document.getElementById('nome').value = '';
+  document.getElementById('descricao').value = '';
+  document.getElementById('preco-custo').value = '';
+  document.getElementById('preco-venda').value = '';
+  document.getElementById('quantidade').value = '1';
+  document.getElementById('origem').value = '';
+  document.getElementById('categoria').value = '❄️ Eletrodomésticos';
+  document.getElementById('estado').value = '✅ Produto novo';
+  fotosTmp = [];
+  renderFotosTmp();
+}
+
+// ============================================================
+// CADASTRAR PRODUTO
+// ============================================================
+async function cadastrarProduto() {
+  const nome = document.getElementById('nome').value.trim();
+  if (!nome) { showToast('⚠️ Informe o nome do produto!'); return; }
+
+  const btn = document.getElementById('btn-cadastrar');
+  btn.disabled = true;
+  btn.textContent = '⏳ Salvando...';
+
+  const id = uid();
+  let driveFolderIdProd = null;
+  let fotos = [];
+
+  // Upload fotos pro Drive se conectado
+  if (driveConnected && fotosTmp.length > 0) {
+    showToast('📤 Enviando fotos...', 8000);
+    try {
+      driveFolderIdProd = await getOrCreateProductFolder(id, nome);
+      for (let i = 0; i < fotosTmp.length; i++) {
+        const f = fotosTmp[i];
+        const fileName = `foto_${i+1}_${Date.now()}.jpg`;
+        const result = await uploadPhotoToDrive(f.blob, fileName, driveFolderIdProd);
+        if (result) {
+          fotos.push({ driveId: result.id, url: result.url });
+        } else {
+          // Fallback: salvar como base64
+          fotos.push({ local: true, url: f.localUrl });
+        }
+      }
+    } catch(e) {
+      console.error('Upload error:', e);
+      // Fallback: local
+      fotos = fotosTmp.map(f => ({ local: true, url: f.localUrl }));
+      showToast('⚠️ Erro no Drive, fotos salvas localmente');
+    }
+  } else {
+    // Sem Drive: salvar base64 local
+    fotos = fotosTmp.map(f => ({ local: true, url: f.localUrl, blob: f.blob }));
+  }
+
+  const produto = {
+    id,
+    nome,
+    categoria: document.getElementById('categoria').value,
+    estado: document.getElementById('estado').value,
+    descricao: document.getElementById('descricao').value.trim(),
+    precoCusto: parseFloat(document.getElementById('preco-custo').value) || 0,
+    precoVenda: parseFloat(document.getElementById('preco-venda').value) || 0,
+    quantidade: parseInt(document.getElementById('quantidade').value) || 1,
+    origem: document.getElementById('origem').value.trim(),
+    fotos,
+    driveFolderId: driveFolderIdProd,
+    dataCadastro: new Date().toISOString(),
+    vendido: false
+  };
+
+  // Guarda blobs em cache de memória para compartilhar na mesma sessão
+  if (fotosTmp.length > 0) {
+    blobCache[id] = fotosTmp.map(f => f.blob).filter(Boolean);
+  }
+
+  produtos.push(produto);
+  saveData();
+  updateCounters();
+  limparForm();
+
+  btn.disabled = false;
+  btn.textContent = '✅ Cadastrar Produto';
+  showToast('✅ Produto cadastrado com sucesso!');
+  showTab('estoque');
+}
+
+// ============================================================
+// ESTOQUE
+// ============================================================
+function renderEstoque() {
+  const busca = (document.getElementById('search-estoque')?.value || '').toLowerCase();
+  const cat = document.getElementById('filter-cat')?.value || '';
+  const list = document.getElementById('estoque-list');
+  if (!list) return;
+
+  let itens = produtos.filter(p => !p.vendido);
+  if (busca) itens = itens.filter(p => p.nome.toLowerCase().includes(busca) || p.descricao?.toLowerCase().includes(busca));
+  if (cat) itens = itens.filter(p => p.categoria === cat);
+
+  if (!itens.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📦</div><div>Nenhum produto no estoque</div></div>';
+    return;
+  }
+
+  list.innerHTML = itens.map(p => {
+    const badgeClass = p.estado.includes('novo') ? 'badge-new' : p.estado.includes('Ótimo') ? 'badge-good' : p.estado.includes('Razoável') ? 'badge-ok' : 'badge-damaged';
+    const fotos = (p.fotos||[]).map(f => `<img src="${f.url}" alt="" onclick="openLightbox('${f.url}')" onerror="this.style.display='none'">`).join('');
+    return `<div class="card">
+      <div class="card-header">
+        <div class="card-title">${p.categoria?.split(' ')[0]||''} ${p.nome}${p.quantidade>1?' ('+p.quantidade+'x)':''}</div>
+        <span class="badge ${badgeClass}">${p.estado.split(' ').slice(1).join(' ')}</span>
+      </div>
+      <div class="card-info">
+        ${p.descricao ? `<div>${p.descricao}</div>` : ''}
+        ${p.precoVenda ? `<div><strong>Venda:</strong> ${fmt(p.precoVenda)}</div>` : ''}
+        ${p.precoCusto ? `<div><strong>Custo:</strong> ${fmt(p.precoCusto)}</div>` : ''}
+      </div>
+      ${fotos ? `<div class="card-photos">${fotos}</div>` : ''}
+      <div class="card-actions">
+        <button class="card-btn cb-wpp" onclick="anunciarWpp('${p.id}')">📱 WhatsApp</button>
+        <button class="card-btn cb-fb" onclick="anunciarFb('${p.id}')">📘 Facebook</button>
+        <button class="card-btn cb-edit" onclick="editarProduto('${p.id}')">✏️ Editar</button>
+        <button class="card-btn cb-sell" onclick="venderProduto('${p.id}')">💰 Vender</button>
+        <button class="card-btn cb-del" onclick="deletarProduto('${p.id}')">🗑️ Apagar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// ANÚNCIOS
+// ============================================================
+function getProduto(id) { return produtos.find(p => p.id === id); }
+
+async function anunciarWpp(id) {
+  const p = getProduto(id);
+  if (!p) return;
+  const txt = gerarTexto(p);
+
+  // Tenta compartilhar foto + texto via Web Share API (Android)
+  const fotos = p.fotos || [];
+  if (fotos.length > 0 && navigator.share) {
+    try {
+      // Busca a primeira foto como blob
+      const primeiraFoto = fotos[0];
+      let fileToShare = null;
+
+      // Tenta pegar blob do cache de memória (produto cadastrado nessa sessão)
+      const blobs = blobCache[p.id];
+      if (blobs && blobs.length > 0) {
+        fileToShare = new File([blobs[0]], 'produto.jpg', { type: 'image/jpeg' });
+      } else if (primeiraFoto.blob) {
+        // Foto ainda em memória (sessão atual)
+        fileToShare = new File([primeiraFoto.blob], 'produto.jpg', { type: 'image/jpeg' });
+      } else if (primeiraFoto.url && primeiraFoto.local) {
+        // Base64 salvo — converte para blob
+        const res = await fetch(primeiraFoto.url);
+        const blob = await res.blob();
+        fileToShare = new File([blob], 'produto.jpg', { type: 'image/jpeg' });
+      }
+
+      if (fileToShare && navigator.canShare({ files: [fileToShare] })) {
+        // Copia texto para clipboard ao mesmo tempo
+        navigator.clipboard?.writeText(txt).catch(()=>{});
+        showToast('📋 Texto copiado! Cole como legenda no WhatsApp', 5000);
+        await navigator.share({
+          files: [fileToShare],
+          title: p.nome
+        });
+        return;
+      }
+    } catch(e) {
+      if (e.name !== 'AbortError') console.error('Share error:', e);
+      // Se cancelou ou deu erro, cai no fallback abaixo
+    }
+  }
+
+  // Fallback: só texto via wa.me
+  navigator.clipboard?.writeText(txt).catch(()=>{});
+  showToast('📋 Texto copiado!');
+  const url = 'https://wa.me/?text=' + encodeURIComponent(txt);
+  window.open(url, '_blank');
+}
+
+function anunciarFb(id) {
+  const p = getProduto(id);
+  if (!p) return;
+  const txt = gerarTexto(p);
+  navigator.clipboard?.writeText(txt).then(() => showToast('📋 Texto copiado! Cole no Marketplace'));
+  window.open('https://www.facebook.com/marketplace/create/item', '_blank');
+}
+
+function gerarTexto(p) {
+  const estadoTexto = p.estado.replace(/^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]\s*/u, '').replace(/^[^\wÀ-ɏ\s]+ ?/u, '');
+  let txt = `🏷️ *${p.nome}*\n\n`;
+  if (p.descricao) txt += `📝 ${p.descricao}\n\n`;
+  txt += `✅ Estado: ${estadoTexto}\n`;
+  if (p.precoVenda) txt += `💰 Valor: ${fmt(p.precoVenda)}\n`;
+  txt += `\n🚚 Entregas em: Itaúna, Mateus Leme, Juatuba, Betim, Contagem, Itatiaiuçu, Igarapé e Bicas — consulte o frete!\n`;
+  txt += `\n📞 Entre em contato para mais informações!`;
+  return txt;
+}
+
+// ============================================================
+// EDITAR PRODUTO
+// ============================================================
+function editarProduto(id) {
+  const p = getProduto(id);
+  if (!p) return;
+  editandoId = id;
+  document.getElementById('e-nome').value = p.nome;
+  document.getElementById('e-categoria').value = p.categoria;
+  document.getElementById('e-estado').value = p.estado;
+  document.getElementById('e-descricao').value = p.descricao || '';
+  document.getElementById('e-custo').value = p.precoCusto || '';
+  document.getElementById('e-venda').value = p.precoVenda || '';
+  document.getElementById('e-qtd').value = p.quantidade || 1;
+  document.getElementById('e-origem').value = p.origem || '';
+  document.getElementById('modal-editar').classList.add('open');
+}
+
+function salvarEdicao() {
+  const p = getProduto(editandoId);
+  if (!p) return;
+  p.nome = document.getElementById('e-nome').value.trim();
+  p.categoria = document.getElementById('e-categoria').value;
+  p.estado = document.getElementById('e-estado').value;
+  p.descricao = document.getElementById('e-descricao').value.trim();
+  p.precoCusto = parseFloat(document.getElementById('e-custo').value) || 0;
+  p.precoVenda = parseFloat(document.getElementById('e-venda').value) || 0;
+  p.quantidade = parseInt(document.getElementById('e-qtd').value) || 1;
+  p.origem = document.getElementById('e-origem').value.trim();
+  saveData();
+  closeModal('modal-editar');
+  renderEstoque();
+  showToast('✅ Produto atualizado!');
+}
+
+// ============================================================
+// DELETAR PRODUTO
+// ============================================================
+async function deletarProduto(id) {
+  if (!confirm('Apagar produto do estoque?')) return;
+  const p = getProduto(id);
+  if (!p) return;
+
+  // Apagar fotos do Drive
+  if (driveConnected && p.driveFolderId) {
+    showToast('🗑️ Apagando fotos do Drive...');
+    await deleteProductFolderFromDrive(p);
+  }
+
+  produtos = produtos.filter(pr => pr.id !== id);
+  saveData();
+  updateCounters();
+  renderEstoque();
+  showToast('✅ Produto removido!');
+}
+
+// ============================================================
+// VENDA
+// ============================================================
+function venderProduto(id) {
+  vendaId = id;
+  const p = getProduto(id);
+  if (!p) return;
+  document.getElementById('venda-produto-info').innerHTML = `<strong>${p.nome}</strong> — Preço sugerido: ${fmt(p.precoVenda)}`;
+  document.getElementById('v-comprador').value = '';
+  document.getElementById('v-telefone').value = '';
+  document.getElementById('v-data').value = new Date().toISOString().split('T')[0];
+  document.getElementById('v-valor').value = p.precoVenda || '';
+  document.getElementById('v-obs').value = '';
+  document.getElementById('v-obs-fiado').value = '';
+  document.getElementById('v-entrada').value = '';
+  document.getElementById('v-pendente').textContent = 'R$ 0,00';
+  pagtoItens = [{ forma: 'PIX', valor: p.precoVenda || '' }];
+  renderPagtoLista();
+  document.getElementById('fiado-section').classList.add('hidden');
+  document.getElementById('modal-venda').classList.add('open');
+}
+
+function renderPagtoLista() {
+  const list = document.getElementById('pagto-list');
+  list.innerHTML = pagtoItens.map((item, i) => `
+    <div class="pagto-row">
+      <select onchange="pagtoItens[${i}].forma=this.value;checkFiado()">
+        ${['Dinheiro','PIX','Cartão de crédito','Cartão de débito','Pix de terceiro','Fiado'].map(f =>
+          `<option${item.forma===f?' selected':''}>${f}</option>`).join('')}
+      </select>
+      <input type="number" placeholder="Valor" value="${item.valor}" step="0.01"
+        onchange="pagtoItens[${i}].valor=this.value;calcPendente()">
+      <button onclick="pagtoItens.splice(${i},1);renderPagtoLista();checkFiado()">✕</button>
+    </div>`).join('');
+  checkFiado();
+}
+
+function addPagtoRow() {
+  pagtoItens.push({ forma: 'Dinheiro', valor: '' });
+  renderPagtoLista();
+}
+
+function checkFiado() {
+  const temFiado = pagtoItens.some(p => p.forma === 'Fiado');
+  const fiado = document.getElementById('fiado-section');
+  if (temFiado) {
+    fiado.classList.remove('hidden');
+    calcPendente();
+  } else {
+    fiado.classList.add('hidden');
+  }
+}
+
+function calcPendente() {
+  const total = parseFloat(document.getElementById('v-valor').value) || 0;
+  const entrada = parseFloat(document.getElementById('v-entrada').value) || 0;
+  const outrosPagtos = pagtoItens.filter(p => p.forma !== 'Fiado').reduce((s,p) => s + (parseFloat(p.valor)||0), 0);
+  const pendente = Math.max(0, total - entrada - outrosPagtos);
+  document.getElementById('v-pendente').textContent = fmt(pendente);
+}
+
+function confirmarVenda() {
+  const p = getProduto(vendaId);
+  if (!p) return;
+  const valor = parseFloat(document.getElementById('v-valor').value) || 0;
+  if (!valor) { showToast('⚠️ Informe o valor da venda!'); return; }
+
+  const temFiado = pagtoItens.some(pg => pg.forma === 'Fiado');
+  const entrada = parseFloat(document.getElementById('v-entrada').value) || 0;
+  const outrosPagtos = pagtoItens.filter(pg => pg.forma !== 'Fiado').reduce((s,pg) => s + (parseFloat(pg.valor)||0), 0);
+  const pendente = temFiado ? Math.max(0, valor - entrada - outrosPagtos) : 0;
+
+  let pagtoDesc = '';
+  if (pagtoItens.length === 1) {
+    pagtoDesc = pagtoItens[0].forma;
+  } else {
+    pagtoDesc = 'Misto: ' + pagtoItens.map(pg => `${pg.forma} ${fmt(pg.valor)}`).join(' + ');
+  }
+
+  const venda = {
+    id: uid(),
+    produtoId: vendaId,
+    produtoNome: p.nome,
+    valor,
+    pagto: pagtoItens.length === 1 ? pagtoItens[0].forma : 'Misto',
+    pagtoItens: [...pagtoItens],
+    pagtoDesc,
+    comprador: document.getElementById('v-comprador').value.trim(),
+    telefone: document.getElementById('v-telefone').value.trim(),
+    obs: document.getElementById('v-obs').value.trim(),
+    obsFiado: document.getElementById('v-obs-fiado').value.trim(),
+    data: document.getElementById('v-data').value,
+    entrada: entrada,
+    pago: outrosPagtos + entrada,
+    pendente,
+    abatimentos: [],
+    quitado: pendente === 0,
+    precoCusto: p.precoCusto || 0
+  };
+
+  vendas.push(venda);
+
+  // Marcar produto vendido
+  if (p.quantidade <= 1) {
+    p.vendido = true;
+  } else {
+    p.quantidade--;
+  }
+
+  saveData();
+  updateCounters();
+  closeModal('modal-venda');
+  renderEstoque();
+  showToast('✅ Venda registrada!');
+}
+
+// ============================================================
+// FINANCEIRO
+// ============================================================
+function renderFinanceiro() {
+  const de = document.getElementById('fin-de').value;
+  const ate = document.getElementById('fin-ate').value;
+  const pagto = document.getElementById('fin-pagto').value;
+
+  let vs = [...vendas];
+  if (de) vs = vs.filter(v => v.data >= de);
+  if (ate) vs = vs.filter(v => v.data <= ate);
+  if (pagto) vs = vs.filter(v => {
+    if (pagto === 'Misto') return v.pagto === 'Misto';
+    return v.pagto === pagto || v.pagtoItens?.some(p => p.forma === pagto);
+  });
+
+  const total = vs.reduce((s,v) => s + v.valor, 0);
+  const custo = vs.reduce((s,v) => s + (v.precoCusto||0), 0);
+  const lucro = total - custo;
+  const fiados = vs.filter(v => v.pendente > 0 && !v.quitado).reduce((s,v) => s + v.pendente, 0);
+
+  document.getElementById('fin-summary').innerHTML = `
+    <div class="fin-card"><div class="val">${fmt(total)}</div><div class="lbl">Total vendido</div></div>
+    <div class="fin-card"><div class="val" style="color:${lucro>=0?'#7dca75':'#ca7575'}">${fmt(lucro)}</div><div class="lbl">Lucro estimado</div></div>
+    <div class="fin-card"><div class="val">${vs.length}</div><div class="lbl">Vendas</div></div>
+    <div class="fin-card"><div class="val" style="color:#ca7575">${fmt(fiados)}</div><div class="lbl">Fiado pendente</div></div>
+  `;
+
+  if (!vs.length) {
+    document.getElementById('vendas-list').innerHTML = '<div class="empty-state"><div class="icon">💰</div><div>Nenhuma venda encontrada</div></div>';
+    return;
+  }
+
+  document.getElementById('vendas-list').innerHTML = vs.slice().reverse().map(v => `
+    <div class="venda-item">
+      <div class="vi-header">
+        <span class="vi-title">${v.produtoNome}</span>
+        <span class="vi-date">${v.data ? v.data.split('-').reverse().join('/') : ''}</span>
+      </div>
+      <div class="vi-details">
+        <strong>${fmt(v.valor)}</strong> — ${v.pagtoDesc || v.pagto}
+        ${v.comprador ? ` | ${v.comprador}` : ''}
+        ${v.pendente > 0 && !v.quitado ? `<br><span style="color:#ca7575">⏳ Pendente: ${fmt(v.pendente)}</span>` : ''}
+        ${v.quitado && v.pendente > 0 ? `<br><span style="color:#7dca75">✅ Fiado quitado</span>` : ''}
+        ${v.obs ? `<br><em>${v.obs}</em>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+// ============================================================
+// FIADOS
+// ============================================================
+function renderFiados() {
+  const fiadosAbertos = vendas.filter(v => v.pendente > 0 && !v.quitado);
+  const list = document.getElementById('fiados-list');
+
+  if (!fiadosAbertos.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">🎉</div><div>Nenhum fiado em aberto!</div></div>';
+    return;
+  }
+
+  list.innerHTML = fiadosAbertos.map(v => {
+    const abats = (v.abatimentos||[]).map(a =>
+      `<div class="abat-item"><span>${a.data?.split('-').reverse().join('/')||''} — ${a.obs||'Pagamento'}</span><span style="color:#7dca75">${fmt(a.valor)}</span></div>`
+    ).join('');
+    return `<div class="card fiado-card">
+      <div class="card-header">
+        <div class="card-title">⏳ ${v.produtoNome}</div>
+        <span style="color:#ca7575;font-weight:700">${fmt(v.pendente)}</span>
+      </div>
+      <div class="card-info">
+        ${v.comprador ? `<div><strong>Cliente:</strong> ${v.comprador}${v.telefone ? ` — ${v.telefone}` : ''}</div>` : ''}
+        <div><strong>Venda:</strong> ${fmt(v.valor)} em ${v.data?.split('-').reverse().join('/')||''}</div>
+        ${v.entrada ? `<div><strong>Entrada:</strong> ${fmt(v.entrada)}</div>` : ''}
+        ${v.obsFiado ? `<div><em>${v.obsFiado}</em></div>` : ''}
+        ${abats ? `<div style="margin-top:6px"><strong>Abatimentos:</strong>${abats}</div>` : ''}
+      </div>
+      <div class="card-actions">
+        <button class="card-btn cb-edit" onclick="abrirAbater('${v.id}')">💵 Receber</button>
+        ${v.comprador && v.telefone ? `<button class="card-btn cb-wpp" onclick="cobrarWpp('${v.id}')">📱 Cobrar</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function cobrarWpp(id) {
+  const v = vendas.find(v => v.id === id);
+  if (!v) return;
+  const msg = `Olá ${v.comprador||''}! Passando para lembrar sobre o pagamento pendente de *${fmt(v.pendente)}* referente ao(a) ${v.produtoNome}. Qualquer dúvida estou à disposição! 😊`;
+  window.open('https://wa.me/55' + v.telefone?.replace(/\D/g,'') + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function abrirAbater(id) {
+  const v = vendas.find(v => v.id === id);
+  if (!v) return;
+  fiado_id = id;
+  document.getElementById('abater-info').innerHTML = `
+    <strong>${v.produtoNome}</strong><br>
+    Cliente: ${v.comprador||'—'}<br>
+    Pendente: <span style="color:#ca7575">${fmt(v.pendente)}</span>
+  `;
+  document.getElementById('abater-valor').value = '';
+  document.getElementById('abater-obs').value = '';
+  // Histórico abatimentos
+  const hist = (v.abatimentos||[]).map(a =>
+    `<div class="abat-item"><span>${a.data?.split('-').reverse().join('/')||''} — ${a.obs||'Pagamento'}</span><span style="color:#7dca75">${fmt(a.valor)}</span></div>`
+  ).join('');
+  document.getElementById('abat-list').innerHTML = hist ? `<div class="section-title" style="margin-top:14px">Histórico</div>${hist}` : '';
+  document.getElementById('modal-abater').classList.add('open');
+}
+
+function confirmarAbatimento() {
+  const v = vendas.find(v => v.id === fiado_id);
+  if (!v) return;
+  const val = parseFloat(document.getElementById('abater-valor').value) || 0;
+  if (!val || val <= 0) { showToast('⚠️ Informe o valor!'); return; }
+  if (val > v.pendente) { showToast('⚠️ Valor maior que o pendente!'); return; }
+
+  if (!v.abatimentos) v.abatimentos = [];
+  v.abatimentos.push({
+    valor: val,
+    obs: document.getElementById('abater-obs').value.trim() || 'Pagamento recebido',
+    data: new Date().toISOString().split('T')[0]
+  });
+  v.pendente = Math.max(0, v.pendente - val);
+  v.pago = (v.pago || 0) + val;
+  if (v.pendente === 0) { v.quitado = true; showToast('🎉 Fiado quitado!'); }
+  else showToast('✅ Abatimento registrado!');
+
+  saveData();
+  closeModal('modal-abater');
+  renderFiados();
+}
+
+function quitarFiado() {
+  const v = vendas.find(v => v.id === fiado_id);
+  if (!v) return;
+  if (!confirm('Marcar como quitado?')) return;
+  v.quitado = true;
+  v.pendente = 0;
+  saveData();
+  closeModal('modal-abater');
+  renderFiados();
+  showToast('✅ Fiado quitado!');
+}
+
+// ============================================================
+// MODALS & LIGHTBOX
+// ============================================================
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightbox-img').src = '';
+}
+
+// Fechar modal clicando fora
+document.querySelectorAll('.modal').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  // Set dates default for financeiro
+  const hoje = new Date().toISOString().split('T')[0];
+  const mesAtras = new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0];
+  document.getElementById('fin-de').value = mesAtras;
+  document.getElementById('fin-ate').value = hoje;
+
+  loadData();
+  initDrive();
+});
+</script>
+</body>
+</html>
